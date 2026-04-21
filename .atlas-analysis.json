@@ -1,0 +1,101 @@
+{
+  "projectType": "saas",
+  "projectName": "Kashio",
+  "projectDescription": "An AI-native expense tracker that lets you log spending via natural language, voice, or Telegram — and ask questions about your spending history.",
+  "theme": "almond",
+  "primaryColor": "#6366f1",
+  "lightColor": "#eef2ff",
+  "darkColor": "#3730a3",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "environment-variables"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/expense-logging",
+              "features/ai-assistant",
+              "features/analytics",
+              "features/budget-preferences"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/telegram",
+              "integrations/oauth"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/self-hosting",
+              "deployment/database",
+              "deployment/demo-data"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/expenses",
+              "api-reference/parse-expense",
+              "api-reference/chat",
+              "api-reference/transcribe",
+              "api-reference/user-preferences",
+              "api-reference/telegram-integration"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Natural language expense parsing with AI confidence scoring",
+    "Voice transcription via Groq Whisper for hands-free entry",
+    "Streaming AI chat assistant grounded in personal expense history",
+    "Analytics dashboard with monthly, yearly, and custom date ranges",
+    "Budget tracking with category breakdowns and progress metrics",
+    "Telegram bot integration with inline confirmation flows",
+    "Two-tier AI validation: invalid inputs, missing fields, low-confidence confirmation dialogs",
+    "Authentication with email/password, GitHub OAuth, and Google OAuth",
+    "Onboarding wizard for budget, currency, and category setup",
+    "Demo data seeding scripts for realistic multi-month expense history"
+  ],
+  "publicApiSurface": [
+    "GET /api/expenses — list user expenses",
+    "POST /api/expenses — create expense",
+    "PUT /api/expenses/[id] — update expense",
+    "DELETE /api/expenses/[id] — delete expense",
+    "POST /api/parse-expense — AI natural language expense parsing",
+    "POST /api/chat — streaming AI chat with expense context",
+    "POST /api/transcribe — audio to text via Groq Whisper",
+    "GET /api/user/preferences — get user preferences",
+    "POST /api/user/preferences — update user preferences",
+    "GET /api/integrations/telegram — Telegram connection status",
+    "POST /api/integrations/telegram/link — create Telegram deep-link token",
+    "DELETE /api/integrations/telegram — disconnect Telegram",
+    "POST /api/integrations/telegram/webhook — Telegram webhook handler",
+    "GET /api/auth/[...all] — Better Auth catchall (sign up, sign in, OAuth)"
+  ]
+}

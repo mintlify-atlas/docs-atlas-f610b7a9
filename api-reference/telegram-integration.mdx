@@ -1,0 +1,169 @@
+---
+title: "Telegram integration API endpoints"
+description: "Endpoints to check Telegram connection status, generate deep-link tokens, disconnect an account, and receive Telegram webhook events."
+---
+
+The Telegram integration API lets you check whether a user has connected their Telegram account, generate a deep-link token to initiate account linking, and disconnect an existing connection. There is also a webhook endpoint that Telegram's servers call whenever the bot receives a message or button interaction — this is not called directly by users.
+
+---
+
+## GET /api/integrations/telegram
+
+Returns the Telegram connection status for the authenticated user.
+
+**Authentication:** Required
+
+```bash
+curl --request GET \
+  --url http://localhost:3000/api/integrations/telegram \
+  --cookie ./cookies.txt
+```
+
+### Response
+
+<ResponseField name="connected" type="boolean" required>
+  `true` if the user has linked a Telegram account, `false` otherwise.
+</ResponseField>
+
+<ResponseField name="botUsername" type="string" required>
+  The Telegram bot username (without the `@` prefix). Used to build deep-link URLs.
+</ResponseField>
+
+<ResponseField name="connection" type="object | null" required>
+  Details about the linked Telegram account. `null` if not connected.
+
+  <Expandable title="connection properties">
+    <ResponseField name="telegramUsername" type="string | null">
+      The user's Telegram username, or `null` if they don't have one set.
+    </ResponseField>
+    <ResponseField name="telegramFirstName" type="string | null">
+      The user's first name in Telegram.
+    </ResponseField>
+    <ResponseField name="linkedAt" type="string">
+      ISO 8601 timestamp of when the account was linked.
+    </ResponseField>
+    <ResponseField name="lastSeenAt" type="string | null">
+      ISO 8601 timestamp of the user's last interaction with the bot, or `null` if never seen.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Response — 200 OK (connected)**
+
+```json
+{
+  "connected": true,
+  "botUsername": "KashioBot",
+  "connection": {
+    "telegramUsername": "johndoe",
+    "telegramFirstName": "John",
+    "linkedAt": "2026-03-10T12:00:00.000Z",
+    "lastSeenAt": "2026-04-20T09:30:00.000Z"
+  }
+}
+```
+
+**Response — 200 OK (not connected)**
+
+```json
+{
+  "connected": false,
+  "botUsername": "KashioBot",
+  "connection": null
+}
+```
+
+---
+
+## POST /api/integrations/telegram/link
+
+Generates a single-use deep-link token that the user can click to connect their Telegram account to their Kashio account. The token is valid for a limited time and can only be used once.
+
+**Authentication:** Required
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/integrations/telegram/link \
+  --cookie ./cookies.txt
+```
+
+### Response
+
+<ResponseField name="botUsername" type="string" required>
+  The Telegram bot username.
+</ResponseField>
+
+<ResponseField name="deepLinkUrl" type="string" required>
+  The full Telegram deep-link URL. Direct the user to open this URL in Telegram to initiate account linking.
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string" required>
+  ISO 8601 timestamp indicating when the token expires.
+</ResponseField>
+
+**Response — 200 OK**
+
+```json
+{
+  "botUsername": "KashioBot",
+  "deepLinkUrl": "https://t.me/KashioBot?start=abc123tokenxyz",
+  "expiresAt": "2026-04-21T19:00:00.000Z"
+}
+```
+
+---
+
+## DELETE /api/integrations/telegram
+
+Disconnects the authenticated user's linked Telegram account. After disconnecting, the bot will no longer recognize messages from that Telegram user.
+
+**Authentication:** Required
+
+```bash
+curl --request DELETE \
+  --url http://localhost:3000/api/integrations/telegram \
+  --cookie ./cookies.txt
+```
+
+### Response
+
+Returns the same shape as `GET /api/integrations/telegram`, reflecting the disconnected state.
+
+**Response — 200 OK**
+
+```json
+{
+  "connected": false,
+  "botUsername": "KashioBot",
+  "connection": null
+}
+```
+
+---
+
+## POST /api/integrations/telegram/webhook
+
+Receives update events from Telegram's servers. This endpoint is registered as the webhook URL in the Telegram Bot API and is called automatically by Telegram whenever the bot receives a message or a button interaction (`callback_query`).
+
+<Warning>
+  This endpoint is called by Telegram's servers, not by users directly. You do not need to call it yourself. It is authenticated via the `X-Telegram-Bot-Api-Secret-Token` header, which Telegram sends with each request using a secret you configure. Requests without a valid secret token receive a `401 Unauthorized` response.
+</Warning>
+
+**Authentication:** `X-Telegram-Bot-Api-Secret-Token` header (set by Telegram, not a session cookie)
+
+### Request
+
+Telegram sends a JSON body containing a [Telegram Update object](https://core.telegram.org/bots/api#update). The endpoint handles two update types:
+
+- `message` — a text message sent to the bot
+- `callback_query` — an inline button interaction (used for expense confirmation/editing)
+
+### Response — 200 OK
+
+```json
+{
+  "ok": true
+}
+```
+
+If the same `update_id` is received more than once (Telegram may retry), the endpoint returns `200 OK` without reprocessing.

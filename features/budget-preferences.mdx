@@ -1,0 +1,52 @@
+---
+title: "Budget tracking and account preferences"
+description: "Set a monthly budget, choose your currency and timezone, pick active expense categories, and track progress from the home dashboard."
+---
+
+Kashio stores a set of preferences for your account that control how expenses are displayed and how budget progress is calculated. You set these during the onboarding wizard when you first sign up, and you can update them at any time from your profile. The monthly budget figure drives the progress bar and remaining-budget metrics shown at the top of the home dashboard.
+
+## Preferences reference
+
+| Preference | Type | Default | Description |
+|---|---|---|---|
+| Monthly budget | Numeric | — | Your spending target for a calendar month. Required during onboarding. |
+| Currency | Text | `USD` | Currency code used for all formatted amounts across the app. |
+| Timezone | Text | `America/Los_Angeles` | Timezone used when resolving and displaying expense dates. |
+| Language | Text | `en` | Interface language. |
+| Date format | Text | `MM/DD/YYYY` | Format used when displaying dates in the expense table and dialogs. |
+| Enabled categories | Array | All 10 categories | The subset of categories available when logging or editing expenses. |
+
+## Monthly budget metrics
+
+The budget card at the top of the home dashboard updates every time you add, edit, or delete an expense for the current month. It shows three figures side by side:
+
+- **Remaining** (or **Over budget**) — your monthly budget minus total spending so far. Shown in red when you have exceeded the budget.
+- **Days left** — calendar days remaining in the current month.
+- **Top category** — the category with the highest total this month, excluding Bills. Useful for spotting where discretionary spending is concentrated.
+
+A progress bar fills as you spend. It stays green up to 80% of budget, turns amber between 80% and 100%, and turns red when you exceed the limit.
+
+## Onboarding wizard
+
+When you first sign up, Kashio walks you through a two-step setup before taking you to the home dashboard.
+
+<Steps>
+  <Step title="Budget and currency">
+    Enter your monthly budget and select your preferred currency. Both values are saved to your preferences and take effect immediately on the home dashboard.
+  </Step>
+  <Step title="Category selection">
+    Choose which expense categories you want to use. You can enable all ten or limit the list to the ones relevant to your spending habits. Categories you disable are hidden from the input parser and confirmation dialog dropdowns.
+  </Step>
+</Steps>
+
+After you complete both steps, Kashio redirects you to `/home`.
+
+## Updating preferences
+
+To change any preference after onboarding:
+
+1. Click **Profile** in the bottom navigation bar.
+2. Open **Settings**.
+3. Update the fields you want to change and save.
+
+Changes to currency take effect on all amount displays immediately. Changes to enabled categories affect new expense entries and the category filter pills in the expense table.

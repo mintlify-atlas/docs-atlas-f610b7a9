@@ -1,0 +1,134 @@
+---
+title: "POST /api/parse-expense — AI expense parser"
+description: "Parse a natural language expense string into structured fields. Returns confidence level, validation status, category, amount, date, and reasoning."
+---
+
+The `/api/parse-expense` endpoint takes a plain English string and uses an AI model (GPT OSS 120B via Groq) to extract a structured expense record from it. It does not save anything to the database — it only parses and validates. Use it before calling `POST /api/expenses` when you want the AI to interpret user input rather than receiving structured data directly.
+
+The endpoint implements a two-tier validation flow: the AI first determines whether the input is a valid expense at all (`isValidExpense`), then returns a confidence level and a list of any fields it could not extract. Your frontend should inspect these fields in order to decide whether to auto-save, show a confirmation dialog, or display an error.
+
+**Authentication:** Required
+
+## Request
+
+<ParamField body="prompt" type="string" required>
+  The natural language string to parse. For example: `"lunch at chipotle $12"`, `"uber $14 yesterday"`, or `"spent $80 on groceries last Tuesday"`.
+</ParamField>
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/parse-expense \
+  --header "Content-Type: application/json" \
+  --cookie ./cookies.txt \
+  --data '{ "prompt": "lunch at chipotle $12" }'
+```
+
+## Response
+
+<ResponseField name="isValidExpense" type="boolean" required>
+  `true` if the input describes an expense. `false` for greetings, questions, gibberish, or any text that is not an expense.
+</ResponseField>
+
+<ResponseField name="confidence" type="string" required>
+  AI confidence level. One of:
+  - `"high"` — all fields are clear; no inference was required
+  - `"medium"` — some fields were inferred from context
+  - `"low"` — critical information is missing or the input is ambiguous
+</ResponseField>
+
+<ResponseField name="amount" type="number | null" required>
+  The expense amount in dollars, or `null` if no amount was found.
+</ResponseField>
+
+<ResponseField name="description" type="string | null" required>
+  A brief description of the expense in normalized English title case, or `null` if unclear.
+</ResponseField>
+
+<ResponseField name="category" type="string" required>
+  The category that best fits the expense. One of: `food`, `transport`, `entertainment`, `shopping`, `bills`, `health`, `groceries`, `travel`, `education`, `other`.
+</ResponseField>
+
+<ResponseField name="date" type="string" required>
+  The inferred date of the expense in `YYYY-MM-DD` format. The AI resolves relative expressions like `"yesterday"` or `"last Tuesday"` to absolute dates.
+</ResponseField>
+
+<ResponseField name="missingFields" type="string[]" required>
+  Array of critical fields the AI could not extract. Possible values: `"amount"`, `"description"`, `"category"`. An empty array means all fields were found.
+</ResponseField>
+
+<ResponseField name="reasoning" type="string" required>
+  A brief explanation of the confidence level, any inferences made, and what information was missing.
+</ResponseField>
+
+## Response examples
+
+**High confidence — auto-save candidate**
+
+```json
+{
+  "isValidExpense": true,
+  "confidence": "high",
+  "amount": 12,
+  "description": "Lunch at Chipotle",
+  "category": "food",
+  "date": "2026-04-21",
+  "missingFields": [],
+  "reasoning": "Clear amount and description provided. Category inferred from restaurant context."
+}
+```
+
+**Medium confidence — show confirmation dialog**
+
+```json
+{
+  "isValidExpense": true,
+  "confidence": "medium",
+  "amount": 12,
+  "description": "Lunch",
+  "category": "food",
+  "date": "2026-04-21",
+  "missingFields": [],
+  "reasoning": "Amount is clear but the description is vague. Date inferred from 'lunch' context."
+}
+```
+
+**Low confidence — missing amount**
+
+```json
+{
+  "isValidExpense": true,
+  "confidence": "low",
+  "amount": null,
+  "description": "Coffee",
+  "category": "food",
+  "date": "2026-04-21",
+  "missingFields": ["amount"],
+  "reasoning": "No amount found in input. Cannot save without a dollar value."
+}
+```
+
+**Invalid input — not an expense**
+
+```json
+{
+  "isValidExpense": false,
+  "confidence": "low",
+  "amount": null,
+  "description": null,
+  "category": "other",
+  "date": "2026-04-21",
+  "missingFields": ["amount", "description"],
+  "reasoning": "Input appears to be a greeting, not an expense."
+}
+```
+
+## How to handle the response
+
+Check the response fields in this order:
+
+1. **`isValidExpense: false`** — Show an error message. The input is not an expense (greeting, question, gibberish, etc.).
+2. **`missingFields` includes `"amount"`** — Show an error. The amount is a critical field; you cannot save without it.
+3. **`confidence` is `"low"` or `"medium"`, or `missingFields` is non-empty** — Show a confirmation dialog pre-filled with the parsed values so the user can review and correct before saving.
+4. **`confidence: "high"` and `missingFields` is empty** — Auto-save and show a preview. The AI is confident in all fields.
+
+After the user confirms (or if confidence is high), send the fields to `POST /api/expenses`.

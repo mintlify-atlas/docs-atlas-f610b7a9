@@ -1,0 +1,96 @@
+---
+title: "Connect Kashio to Telegram"
+description: "Link your Telegram account to log expenses and ask spending questions directly from Telegram, with inline confirmation for low-confidence parses."
+---
+
+The Telegram integration lets you log expenses and ask spending questions from any Telegram client, on any device. Once your account is linked, messages you send to the bot are processed by the same AI pipeline as the web app — expenses are parsed and saved automatically for high-confidence input, and a confirmation flow with inline buttons handles anything uncertain.
+
+## Prerequisites
+
+Before setting up the Telegram integration, make sure:
+
+- Kashio is deployed at a publicly accessible HTTPS URL (Telegram requires a public webhook endpoint)
+- You have access to the server environment to set environment variables and run scripts
+
+## Set up the Telegram integration
+
+<Steps>
+  <Step title="Create a bot with @BotFather">
+    Open Telegram and start a conversation with [@BotFather](https://t.me/BotFather). Send `/newbot` and follow the prompts to choose a name and username for your bot.
+
+    Once created, BotFather gives you a bot token in the format `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. Copy it — you'll need it in the next step.
+  </Step>
+  <Step title="Set environment variables">
+    Add the following variables to your `.env.local` file:
+
+    ```bash
+    TELEGRAM_BOT_TOKEN="your-bot-token-from-botfather"
+    TELEGRAM_BOT_USERNAME="your_bot_username"
+    TELEGRAM_WEBHOOK_SECRET="a-random-secret-string-you-choose"
+    APP_BASE_URL="https://your-public-url.example.com"
+    ```
+
+    - `TELEGRAM_BOT_TOKEN` — the token from BotFather
+    - `TELEGRAM_BOT_USERNAME` — the bot's username without the `@` prefix
+    - `TELEGRAM_WEBHOOK_SECRET` — a secret you generate; Telegram includes it in every webhook request so Kashio can verify the request is genuine
+    - `APP_BASE_URL` — the public URL where Kashio is deployed
+
+    <Note>
+      `APP_BASE_URL` must be your deployed public URL, not `http://localhost:3000`. Telegram's webhook delivery requires a reachable HTTPS endpoint.
+    </Note>
+  </Step>
+  <Step title="Deploy Kashio with a public URL">
+    Telegram webhooks require HTTPS and a publicly routable address. Deploy Kashio to your hosting provider (Vercel, Railway, Fly.io, or any platform that supports Next.js) and confirm the app loads at the URL you set in `APP_BASE_URL`.
+  </Step>
+  <Step title="Register the webhook">
+    Run the webhook registration script from the project root, passing your public URL:
+
+    ```bash
+    bun run telegram:webhook:set -- https://your-public-url.example.com
+    ```
+
+    The script reads `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` from the environment and registers `https://your-public-url.example.com/api/integrations/telegram/webhook` with Telegram.
+
+    A successful run prints:
+
+    ```
+    Telegram webhook configured: https://your-public-url.example.com/api/integrations/telegram/webhook
+    ```
+
+    <Warning>
+      The script uses `dotenv` to load variables from `.env`, not `.env.local`. If you only store secrets in `.env.local`, either duplicate `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, and `APP_BASE_URL` into `.env`, or export them in your shell before running the script:
+
+      ```bash
+      export TELEGRAM_BOT_TOKEN="..."
+      export TELEGRAM_WEBHOOK_SECRET="..."
+      bun run telegram:webhook:set -- https://your-public-url.example.com
+      ```
+    </Warning>
+  </Step>
+  <Step title="Get your Telegram deep link from Kashio">
+    Open Kashio in a browser and navigate to **Profile → Integrations**. Click **Connect Telegram**. Kashio generates a one-time deep link that encodes a short-lived token — the link is valid for 15 minutes.
+  </Step>
+  <Step title="Open the deep link in Telegram">
+    Click the deep link or open it on a device where Telegram is installed. The bot sends you a confirmation message that your account is now connected to Kashio.
+  </Step>
+</Steps>
+
+## What the bot supports
+
+Once linked, your Telegram bot handles three types of interactions:
+
+**Logging expenses**
+
+Send any natural-language expense message, such as `coffee $6` or `uber to airport $42 yesterday`. The bot parses the text using the same AI model as the web app and saves the expense immediately if the parse is high confidence.
+
+**Asking spending questions**
+
+Send a question like `how much did I spend on food this month?` and the bot answers using the same AI assistant context as the web chat, grounded in your expense history.
+
+**Inline confirmation for low-confidence parses**
+
+When the AI isn't fully confident — for example, the amount or description is unclear — the bot sends a summary message with inline buttons to **Confirm**, **Cancel**, or edit individual fields (amount, description, date, or category). You can update each field by tapping the edit button and replying with the new value, then confirm to save.
+
+## Disconnect Telegram
+
+To unlink your Telegram account, open **Profile → Integrations** in Kashio and click **Disconnect**. This removes the connection and any pending confirmations. You can re-link at any time by repeating the steps above.

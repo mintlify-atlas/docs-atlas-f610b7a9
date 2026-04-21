@@ -1,0 +1,108 @@
+---
+title: "Seeding demo data"
+description: "Use Kashio's built-in seed scripts to create a demo account with six months of realistic expense history for testing or demonstrations."
+---
+
+Kashio ships with seed scripts that create a demo account and fill it with roughly six months of realistic expense history. The generated data covers recurring bills, daily coffee runs, grocery trips, dining, transport, shopping, entertainment, and health expenses—including month-specific patterns like holiday gift spending in December. This is useful for testing features, preparing a demo environment, or exploring the analytics and AI chat without having to enter expenses manually.
+
+<Note>
+  The seed scripts authenticate through the app's Better Auth endpoints before writing any data, so the app must be running at `BETTER_AUTH_URL` before you run them.
+</Note>
+
+## Demo account credentials
+
+The scripts create or reuse a fixed account:
+
+| Field | Value |
+|---|---|
+| Email | `demo@kashio.app` |
+| Password | `demo1234!` |
+
+<Warning>
+  These credentials are hardcoded in the seed scripts and intended for local development and testing only. Do not use them in a production environment or any environment accessible to the public.
+</Warning>
+
+## Seeding demo expenses
+
+Run the following from the project root while the dev server is running:
+
+```bash
+bun run seed:demo
+```
+
+This will:
+
+1. Attempt to create the `demo@kashio.app` account, or sign in if it already exists
+2. Set user preferences (USD currency, $3,500/month budget, Pacific timezone)
+3. Generate roughly six months of deterministic expense data
+4. Insert the expenses directly into the database
+
+The generated data is deterministic—running the script multiple times without `--reset` will insert duplicate expenses. To start fresh, use the reset flag described below.
+
+## Resetting demo expenses
+
+To remove only the demo account's expenses without touching any other data:
+
+```bash
+bun run reset:demo
+```
+
+This signs into the demo account, retrieves the user ID, and deletes all associated expense rows. The account itself is kept.
+
+## Full reset and reseed
+
+To clear all existing demo expenses and seed fresh data in a single step:
+
+```bash
+bun scripts/seed-demo.ts --reset
+```
+
+The `--reset` flag tells the script to delete the demo user's existing expenses before generating and inserting the new set.
+
+## Full demo workflow
+
+<Steps>
+  <Step title="Start the dev server">
+    The seed scripts authenticate through the app, so the server needs to be running first:
+
+    ```bash
+    bun run dev
+    ```
+  </Step>
+
+  <Step title="Apply migrations (if you haven't already)">
+    Make sure the database schema is up to date:
+
+    ```bash
+    bun run db:migrate
+    ```
+  </Step>
+
+  <Step title="Seed the demo account">
+    In a separate terminal, run the seed script:
+
+    ```bash
+    bun run seed:demo
+    ```
+
+    The script prints a per-month expense summary and a progress bar as it inserts rows. When it finishes, it prints the login URL and credentials.
+  </Step>
+
+  <Step title="Log in with the demo account">
+    Open `http://localhost:3000/login` and sign in with `demo@kashio.app` / `demo1234!`.
+  </Step>
+
+  <Step title="Reset when you're done">
+    To clean up the demo expenses after testing:
+
+    ```bash
+    bun run reset:demo
+    ```
+
+    Or do a full reseed the next time you need fresh data:
+
+    ```bash
+    bun scripts/seed-demo.ts --reset
+    ```
+  </Step>
+</Steps>

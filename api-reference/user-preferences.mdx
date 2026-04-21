@@ -1,0 +1,143 @@
+---
+title: "User preferences API endpoints"
+description: "GET and POST endpoints to read and update user preferences including budget, currency, timezone, date format, and enabled categories."
+---
+
+The user preferences endpoints let you read and update settings for the authenticated user. Preferences control how Kashio displays and filters data across the dashboard, analytics, and Telegram bot. The `POST` endpoint uses an upsert pattern — it creates preferences if they don't exist, or updates them if they do.
+
+**Authentication:** Required for both endpoints.
+
+---
+
+## GET /api/user/preferences
+
+Returns the current preferences for the authenticated user.
+
+```bash
+curl --request GET \
+  --url http://localhost:3000/api/user/preferences \
+  --cookie ./cookies.txt
+```
+
+**Response — 200 OK**
+
+<ResponseField name="userId" type="string" required>
+  The user ID these preferences belong to.
+</ResponseField>
+
+<ResponseField name="monthlyBudget" type="string" required>
+  Monthly spending budget as a numeric string (e.g., `"2000.00"`).
+</ResponseField>
+
+<ResponseField name="currency" type="string" required>
+  Three-letter ISO 4217 currency code. Default: `"USD"`.
+</ResponseField>
+
+<ResponseField name="timezone" type="string" required>
+  IANA timezone name. Default: `"America/Los_Angeles"`.
+</ResponseField>
+
+<ResponseField name="language" type="string" required>
+  BCP 47 language tag. Default: `"en"`.
+</ResponseField>
+
+<ResponseField name="dateFormat" type="string" required>
+  Display format for dates. Default: `"MM/DD/YYYY"`.
+</ResponseField>
+
+<ResponseField name="enabledCategories" type="string[]" required>
+  Array of active expense category names. Defaults to all 10 categories: `["food", "transport", "entertainment", "shopping", "bills", "health", "groceries", "travel", "education", "other"]`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp of when the preferences record was first created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp of the last update.
+</ResponseField>
+
+```json
+{
+  "userId": "user_abc123",
+  "monthlyBudget": "2000.00",
+  "currency": "USD",
+  "timezone": "America/New_York",
+  "language": "en",
+  "dateFormat": "MM/DD/YYYY",
+  "enabledCategories": ["food", "transport", "groceries", "bills", "health"],
+  "createdAt": "2026-01-10T09:00:00.000Z",
+  "updatedAt": "2026-04-15T14:22:00.000Z"
+}
+```
+
+**Error — 404 Not Found** (preferences not yet created for this user)
+
+```json
+null
+```
+
+---
+
+## POST /api/user/preferences
+
+Creates or updates preferences for the authenticated user. All fields are required. If preferences already exist for the user, they are replaced with the submitted values.
+
+### Request body
+
+<ParamField body="monthlyBudget" type="number" required>
+  Monthly spending budget. Must be a positive number.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Three-letter ISO 4217 currency code (e.g., `"USD"`, `"EUR"`, `"GBP"`). Must be exactly 3 characters.
+</ParamField>
+
+<ParamField body="timezone" type="string" required>
+  IANA timezone name (e.g., `"America/New_York"`, `"Europe/London"`, `"Asia/Tokyo"`).
+</ParamField>
+
+<ParamField body="language" type="string" required>
+  BCP 47 language tag (e.g., `"en"`, `"es"`, `"fr"`).
+</ParamField>
+
+<ParamField body="dateFormat" type="string" required>
+  Date display format string (e.g., `"MM/DD/YYYY"`, `"DD/MM/YYYY"`, `"YYYY-MM-DD"`).
+</ParamField>
+
+<ParamField body="enabledCategories" type="string[]" required>
+  Array of category names to enable. Must contain values from: `food`, `transport`, `entertainment`, `shopping`, `bills`, `health`, `groceries`, `travel`, `education`, `other`.
+</ParamField>
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/user/preferences \
+  --header "Content-Type: application/json" \
+  --cookie ./cookies.txt \
+  --data '{
+    "monthlyBudget": 2500,
+    "currency": "USD",
+    "timezone": "America/New_York",
+    "language": "en",
+    "dateFormat": "MM/DD/YYYY",
+    "enabledCategories": ["food", "transport", "groceries", "bills", "health", "entertainment"]
+  }'
+```
+
+**Response — 200 OK**
+
+The response shape is identical to the GET response — the full preferences record after the upsert.
+
+```json
+{
+  "userId": "user_abc123",
+  "monthlyBudget": "2500.00",
+  "currency": "USD",
+  "timezone": "America/New_York",
+  "language": "en",
+  "dateFormat": "MM/DD/YYYY",
+  "enabledCategories": ["food", "transport", "groceries", "bills", "health", "entertainment"],
+  "createdAt": "2026-01-10T09:00:00.000Z",
+  "updatedAt": "2026-04-21T18:00:00.000Z"
+}
+```

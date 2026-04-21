@@ -1,0 +1,117 @@
+---
+title: "Self-hosting Kashio"
+description: "Deploy Kashio on Vercel, Railway, Fly.io, or any Next.js-compatible platform. Configure environment variables and register the Telegram webhook."
+---
+
+Kashio is a standard Next.js application that runs on any platform that supports Next.js—Vercel, Railway, Fly.io, a bare VPS, or anything else. Beyond the usual build-and-start steps, production deployments require a few extra configuration steps: setting the correct public URL, running database migrations, and optionally registering a Telegram webhook.
+
+<Note>
+  The repository already includes a `vercel.json` that configures Bun as the install command. If you deploy to Vercel, that config is picked up automatically with no extra setup.
+</Note>
+
+## Deploy to production
+
+<Steps>
+  <Step title="Build the app">
+    Run the production build from the project root:
+
+    ```bash
+    bun run build
+    # or
+    npm run build
+    ```
+  </Step>
+
+  <Step title="Configure environment variables">
+    Set the following variables in your hosting provider's environment settings. All variables marked as required must be present for the app to start.
+
+    **Required**
+
+    | Variable | Description |
+    |---|---|
+    | `DATABASE_URL` | PostgreSQL connection string |
+    | `BETTER_AUTH_SECRET` | Random secret used to sign sessions |
+    | `BETTER_AUTH_URL` | The public URL of the deployed app (e.g. `https://kashio.example.com`) |
+    | `GROQ_API_KEY` | API key for Groq-powered expense parsing and chat |
+    | `APP_BASE_URL` | The public URL of the deployed app (same value as `BETTER_AUTH_URL`) |
+
+    **Email authentication (required in production)**
+
+    | Variable | Description |
+    |---|---|
+    | `RESEND_API_KEY` | API key for transactional email via Resend |
+    | `AUTH_FROM_EMAIL` | Sender address shown on verification and reset emails, e.g. `Kashio <auth@example.com>` |
+
+    **OAuth (optional)**
+
+    | Variable | Description |
+    |---|---|
+    | `GITHUB_CLIENT_ID` | GitHub OAuth app client ID |
+    | `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret |
+    | `GOOGLE_CLIENT_ID` | Google OAuth app client ID |
+    | `GOOGLE_CLIENT_SECRET` | Google OAuth app client secret |
+
+    **Telegram (optional)**
+
+    | Variable | Description |
+    |---|---|
+    | `TELEGRAM_BOT_TOKEN` | Token from `@BotFather` |
+    | `TELEGRAM_BOT_USERNAME` | Username of your bot (without `@`) |
+    | `TELEGRAM_WEBHOOK_SECRET` | Secret string used to verify incoming webhook requests |
+  </Step>
+
+  <Step title="Run database migrations">
+    After the database is provisioned and `DATABASE_URL` is set, apply the checked-in migrations:
+
+    ```bash
+    bun run db:migrate
+    ```
+
+    This runs all pending SQL migrations from the `drizzle/` directory against your production database.
+  </Step>
+
+  <Step title="Register the Telegram webhook (if using Telegram)">
+    Once the app is publicly reachable, register the webhook against your deployed URL:
+
+    ```bash
+    bun run telegram:webhook:set -- https://your-deployed-url.example.com
+    ```
+
+    The script reads `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` from the environment. If you keep those in `.env.local`, export them first or copy them into `.env`.
+
+    <Warning>
+      `TELEGRAM_WEBHOOK_SECRET` must be the same value in your environment variables and in the webhook registration call. If they don't match, Telegram's requests will be rejected and the bot will not respond.
+    </Warning>
+  </Step>
+
+  <Step title="Configure email auth (if using email/password)">
+    In production, Kashio sends verification and password-reset emails via Resend. Set `RESEND_API_KEY` and `AUTH_FROM_EMAIL` in your hosting provider.
+
+    In local development, these are optional—when they are absent, Kashio logs auth email links to the server console instead of sending them.
+  </Step>
+</Steps>
+
+## Vercel configuration
+
+The repository includes a minimal `vercel.json` at the project root:
+
+```json
+{
+  "installCommand": "bun install"
+}
+```
+
+This tells Vercel to use Bun instead of npm when installing dependencies. No other Vercel-specific configuration is needed.
+
+## Production vs. local development
+
+A few environment variables behave differently in production:
+
+| Variable | Local development | Production |
+|---|---|---|
+| `APP_BASE_URL` | `http://localhost:3000` | Your public HTTPS URL |
+| `BETTER_AUTH_URL` | `http://localhost:3000` | Your public HTTPS URL |
+| `RESEND_API_KEY` | Optional — email links log to console | Required for email delivery |
+| `AUTH_FROM_EMAIL` | Optional | Required for email delivery |
+
+Both `APP_BASE_URL` and `BETTER_AUTH_URL` must be set to your deployed public URL. `APP_BASE_URL` is used by the Telegram integration to construct webhook and deep-link URLs; `BETTER_AUTH_URL` is used by Better Auth for OAuth redirects and email links.

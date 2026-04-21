@@ -1,0 +1,112 @@
+---
+title: "Database setup and migrations"
+description: "Kashio uses PostgreSQL with Drizzle ORM. Learn how to apply migrations, push schema changes during development, and manage your database."
+---
+
+Kashio stores all data in PostgreSQL and uses Drizzle ORM for schema definitions, queries, and migrations. There are two ways to apply schema changes: generating and running SQL migration files (safe for production), or pushing changes directly to the database (fast for development). Use migrations in any environment where you care about preserving data.
+
+## Connection
+
+Kashio connects to PostgreSQL using the `DATABASE_URL` environment variable. The format is standard PostgreSQL:
+
+```
+postgresql://user:password@host:5432/dbname
+```
+
+The connection pool is created once in `lib/db.ts` and shared across all API routes.
+
+## Schema changes
+
+<Tabs>
+  <Tab title="Production migrations">
+    Migrations generate versioned SQL files that can be reviewed, committed, and applied in a controlled way. Use this approach in production and staging.
+
+    **Step 1: Generate a migration**
+
+    After modifying `lib/schema.ts`, run:
+
+    ```bash
+    bun run db:generate
+    ```
+
+    Drizzle Kit compares your schema to the current database state and writes a new `.sql` file to `drizzle/`.
+
+    **Step 2: Apply the migration**
+
+    ```bash
+    bun run db:migrate
+    ```
+
+    This applies all pending migrations from `drizzle/` to the database pointed to by `DATABASE_URL`.
+  </Tab>
+  <Tab title="Development push">
+    Schema push syncs your schema directly to the database without creating migration files. It is faster during active development but does not produce a migration history.
+
+    ```bash
+    bun run db:push
+    ```
+
+    <Warning>
+      Do not use `db:push` against a production or staging database. It can silently drop columns or tables if the schema has diverged.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Drizzle Studio
+
+Drizzle Studio is a visual database browser you can run locally to inspect and edit rows during development:
+
+```bash
+bun run db:studio
+```
+
+This opens a browser-based UI connected to the database at `DATABASE_URL`.
+
+## Resetting the database
+
+`bun run db:reset` truncates all tables after asking you to confirm. The schema itself is left in place—you do not need to re-run migrations after a reset.
+
+```bash
+bun run db:reset
+```
+
+<Warning>
+  `db:reset` permanently deletes all data, including all user accounts, sessions, and expenses. It prompts for confirmation before running, but there is no undo. Never run this against a production database.
+</Warning>
+
+After a reset, clear the `better-auth.session_token` cookie in your browser to avoid redirect loops from a stale session.
+
+## Tables
+
+Kashio creates the following tables through Drizzle migrations.
+
+**Application tables** (defined in `lib/schema.ts`):
+
+| Table | Purpose |
+|---|---|
+| `expenses` | User expense records with amount, description, category, date, and raw input |
+| `user_preferences` | Per-user settings: monthly budget, currency, timezone, date format, enabled categories |
+| `telegram_connections` | Linked Telegram accounts for connected users |
+| `telegram_link_tokens` | Short-lived tokens used during the Telegram account-linking flow |
+| `telegram_pending_confirmations` | Unconfirmed expenses awaiting inline confirmation via the Telegram bot |
+| `telegram_webhook_events` | Log of incoming Telegram webhook payloads for idempotency and debugging |
+| `changelog` | Release notes entries shown on the public changelog page |
+
+**Better Auth tables** (managed by Better Auth, re-exported through `lib/schema.ts` for migrations):
+
+| Table | Purpose |
+|---|---|
+| `user` | User accounts, also carries `onboardingCompleted` and `onboardingStep` columns |
+| `session` | Active user sessions |
+| `account` | OAuth account links (GitHub, Google) |
+| `verification` | Email verification and password-reset tokens |
+
+## Script reference
+
+| Command | Purpose |
+|---|---|
+| `bun run db:generate` | Generate a Drizzle migration from schema changes |
+| `bun run db:migrate` | Apply pending migrations to the database |
+| `bun run db:push` | Push schema changes directly to PostgreSQL (development only) |
+| `bun run db:studio` | Open Drizzle Studio |
+| `bun run db:reset` | Clear all data from the database after confirmation |

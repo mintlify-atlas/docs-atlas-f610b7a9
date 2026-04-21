@@ -1,0 +1,104 @@
+---
+title: "POST /api/transcribe — voice to text"
+description: "Convert audio recordings to text using Groq Whisper large-v3-turbo. Accepts webm, mp3, wav, ogg, flac, mp4, and m4a audio files up to 25 MB."
+---
+
+The `/api/transcribe` endpoint converts an audio recording to text using Groq's Whisper model. In Kashio, it is the first step in the voice input flow: the browser records audio with `MediaRecorder`, sends the blob to this endpoint, and the returned transcript is fed into either the expense input or the chat interface.
+
+**Authentication:** Required
+
+<Note>
+  This endpoint uses the `whisper-large-v3-turbo` model via Groq. The maximum file size is 25 MB.
+</Note>
+
+## Request
+
+Send a `multipart/form-data` request with the audio file attached under the `audio` field.
+
+<ParamField body="audio" type="file" required>
+  The audio file to transcribe. Supported formats: `audio/webm`, `audio/mpeg`, `audio/mp3`, `audio/wav`, `audio/ogg`, `audio/flac`, `audio/mp4`, `audio/m4a`. Maximum size: 25 MB.
+</ParamField>
+
+## Response
+
+<ResponseField name="text" type="string" required>
+  The transcribed text from the audio recording.
+</ResponseField>
+
+**Response — 200 OK**
+
+```json
+{
+  "text": "lunch at chipotle twelve dollars"
+}
+```
+
+## Examples
+
+### JavaScript — recording with MediaRecorder and transcribing
+
+```javascript
+async function recordAndTranscribe() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+  const chunks = [];
+
+  recorder.ondataavailable = (event) => chunks.push(event.data);
+
+  recorder.onstop = async () => {
+    const blob = new Blob(chunks, { type: "audio/webm" });
+
+    const formData = new FormData();
+    formData.append("audio", blob, "recording.webm");
+
+    const response = await fetch("/api/transcribe", {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    const { text } = await response.json();
+    console.log("Transcript:", text);
+    // Pass `text` to /api/parse-expense or the chat input
+  };
+
+  // Record for 5 seconds, then stop
+  recorder.start();
+  setTimeout(() => recorder.stop(), 5000);
+}
+```
+
+### curl
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/transcribe \
+  --cookie ./cookies.txt \
+  --form "audio=@recording.webm;type=audio/webm"
+```
+
+## Error responses
+
+**400 Bad Request — no file provided**
+
+```json
+{
+  "error": "No audio file provided"
+}
+```
+
+**400 Bad Request — file too large**
+
+```json
+{
+  "error": "File too large (max 25MB)"
+}
+```
+
+**400 Bad Request — unsupported format**
+
+```json
+{
+  "error": "Invalid audio format"
+}
+```

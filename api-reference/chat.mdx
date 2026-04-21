@@ -1,0 +1,101 @@
+---
+title: "POST /api/chat — AI spending assistant"
+description: "Stream AI-generated answers to spending questions grounded in the user's expense history. Uses server-sent events for real-time streaming."
+---
+
+The `/api/chat` endpoint powers Kashio's AI spending assistant. You send a conversation history, and the server streams a response back using server-sent events in the [Vercel AI SDK](https://sdk.vercel.ai) streaming format. The AI has access to the authenticated user's full expense history as context, so it can answer questions like "how much did I spend on food last month?" or "what was my largest expense in March?".
+
+**Authentication:** Required
+
+<Note>
+  The AI assistant fetches the authenticated user's expense history before generating a response. Every answer is grounded in real data from the user's account — not generic financial advice.
+</Note>
+
+## Request
+
+Send a JSON body with a `messages` array in the [Vercel AI SDK `UIMessage` format](https://sdk.vercel.ai/docs/reference/ai-sdk-ui/use-chat). When using the `useChat` hook, the hook manages this array for you automatically.
+
+<ParamField body="messages" type="UIMessage[]" required>
+  Array of conversation messages in Vercel AI SDK `UIMessage` format. Each message has at minimum:
+  - `id` — a unique string ID for the message
+  - `role` — `"user"` or `"assistant"`
+  - `content` — the message text as a string (for user messages) or structured parts (for assistant messages)
+
+  The `useChat` hook from `@ai-sdk/react` constructs this array automatically. When calling the endpoint manually, use the same shape returned by the hook.
+</ParamField>
+
+## Response
+
+The endpoint returns a streaming response using server-sent events (SSE). The stream is compatible with the Vercel AI SDK `useChat` hook, which handles parsing automatically. If you're consuming the stream manually, each event contains a delta chunk of the assistant's reply.
+
+## Examples
+
+### Fetch with streaming (JavaScript)
+
+```javascript
+const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify({
+    messages: [
+      {
+        id: "msg-1",
+        role: "user",
+        content: "How much did I spend on food last month?",
+      },
+    ],
+  }),
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  process.stdout.write(decoder.decode(value));
+}
+```
+
+### Using the Vercel AI SDK `useChat` hook
+
+```typescript
+import { useChat } from "@ai-sdk/react";
+
+export function ChatInterface() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: "/api/chat",
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map((m) => (
+        <div key={m.id}>
+          <strong>{m.role}:</strong> {m.content}
+        </div>
+      ))}
+      <input value={input} onChange={handleInputChange} />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+```
+
+### curl (non-streaming, for inspection)
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/chat \
+  --header "Content-Type: application/json" \
+  --cookie ./cookies.txt \
+  --data '{
+    "messages": [
+      {
+        "id": "msg-1",
+        "role": "user",
+        "content": "What were my top spending categories this month?"
+      }
+    ]
+  }'
+```

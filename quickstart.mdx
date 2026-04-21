@@ -1,80 +1,131 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Get started with Kashio"
+description: "Learn how to install Kashio, configure your environment, run the database migrations, and log your first AI-parsed expense in minutes."
 ---
 
-## Get started in three steps
+This page walks you from zero to a working Kashio instance with a logged expense. By the end you'll have the app running locally, a database ready to go, and a parsed expense saved to your account.
 
-Get your documentation site running locally and make your first customization.
+<Steps>
+  <Step title="Prerequisites">
+    Make sure you have the following installed and available before continuing:
 
-### Step 1: Set up your local environment
+    - **Node.js 20+** — required by Next.js
+    - **Bun 1.x** — used for dependency installation and helper scripts
+    - **PostgreSQL** — Kashio stores all data in a PostgreSQL database
+    - **Groq API key** — used for AI expense parsing and voice transcription
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    <Note>
+      Bun is recommended over npm for this project. Some helper scripts (`seed:demo`, `db:reset`, `reset:demo`) run through Bun directly and will not work with npm.
+    </Note>
+  </Step>
 
-### Step 2: Deploy your changes
+  <Step title="Clone and install dependencies">
+    Clone the repository and install dependencies:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <CodeGroup>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```bash bun (recommended)
+    git clone https://github.com/lifeashaze/kashio.git
+    cd kashio
+    bun install
+    ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash npm
+    git clone https://github.com/lifeashaze/kashio.git
+    cd kashio
+    npm install
+    ```
 
-### Step 3: Go live
+    </CodeGroup>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Configure environment variables">
+    Create a `.env.local` file in the project root with the following content:
 
-## Next steps
+    ```bash .env.local
+    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/kashio"
+    BETTER_AUTH_SECRET="replace-with-a-random-secret"
+    BETTER_AUTH_URL="http://localhost:3000"
+    GROQ_API_KEY="your-groq-api-key"
+    RESEND_API_KEY=""
+    AUTH_FROM_EMAIL="Kashio <auth@example.com>"
 
-Now that you have your docs running, explore these key features:
+    # Optional OAuth
+    GITHUB_CLIENT_ID=""
+    GITHUB_CLIENT_SECRET=""
+    GOOGLE_CLIENT_ID=""
+    GOOGLE_CLIENT_SECRET=""
 
-<CardGroup cols={2}>
+    # Optional Telegram integration
+    TELEGRAM_BOT_TOKEN=""
+    TELEGRAM_BOT_USERNAME=""
+    TELEGRAM_WEBHOOK_SECRET=""
+    APP_BASE_URL="http://localhost:3000"
+    ```
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    The four required variables to get started are `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `GROQ_API_KEY`. All other variables are optional and can be left empty for local development.
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    See the [environment variables reference](/environment-variables) for a full description of every variable.
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    <Warning>
+      The `telegram:webhook:set` script reads environment variables from the shell or a `.env` file — not from `.env.local`. If you keep your Telegram secrets only in `.env.local`, export them to the shell first or duplicate them into a `.env` file before running that script.
+    </Warning>
+  </Step>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+  <Step title="Initialize the database">
+    Run the database migrations to create all required tables:
 
-</CardGroup>
+    ```bash
+    bun run db:migrate
+    ```
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+    During development, you can skip migration files and push the schema directly instead:
+
+    ```bash
+    bun run db:push
+    ```
+
+    Use `db:push` for quick local iteration when you don't need a migration history. Use `db:migrate` when you want to apply the checked-in migration files exactly as they are.
+  </Step>
+
+  <Step title="Start the app">
+    Start the local development server:
+
+    ```bash
+    bun run dev
+    ```
+
+    Open `http://localhost:3000` in your browser. You should see the Kashio landing page.
+
+    <Tip>
+      Want to explore the app with realistic data before entering your own expenses? Run `bun run seed:demo` after completing onboarding to create a demo account (`demo@kashio.app` / `demo1234!`) pre-loaded with roughly six months of expenses.
+    </Tip>
+  </Step>
+
+  <Step title="Complete onboarding">
+    Sign up for a new account. After signing up, Kashio takes you through a two-step onboarding wizard:
+
+    1. **Budget and currency** — Set your monthly budget amount and preferred currency.
+    2. **Categories** — Choose which expense categories you want to track (food, transport, entertainment, shopping, bills, health, groceries, travel, education, and others).
+
+    Once you complete the wizard you'll land on the home dashboard.
+  </Step>
+
+  <Step title="Log your first expense">
+    On the home dashboard, find the expense input at the top of the page. Type a plain-English description of an expense:
+
+    ```
+    lunch $12
+    ```
+
+    Kashio sends this to its AI parser (via Groq) to extract the amount, category, description, and date. If the parse has high confidence, the expense is saved automatically and appears in your expense list. If the AI is less certain — for example, if a field is missing or ambiguous — a confirmation dialog opens so you can review and adjust the parsed values before saving.
+
+    Try other formats to see how the parser handles them:
+
+    ```
+    uber to airport $42 yesterday
+    coffee at the bookshop $6
+    bought groceries $55.40
+    ```
+  </Step>
+</Steps>

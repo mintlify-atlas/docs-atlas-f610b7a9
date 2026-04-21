@@ -1,0 +1,92 @@
+---
+title: "Sign in with GitHub or Google"
+description: "Enable GitHub and Google OAuth so users can sign in to Kashio without a password. Configure client credentials in your identity provider."
+---
+
+Kashio supports email/password login out of the box. You can also enable GitHub and Google OAuth so users can sign in with an existing account — no separate password required. Both providers are optional and independent: you can enable one, both, or neither, and email/password login always remains available.
+
+<Info>
+  Authentication in Kashio is powered by [Better Auth](https://better-auth.com). OAuth providers are enabled at startup based on the presence of the relevant environment variables — no code changes are needed.
+</Info>
+
+<Note>
+  Enabling OAuth providers is optional. If you leave `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` unset, the GitHub and Google buttons simply don't appear on the login and signup pages. Email/password login always works regardless.
+</Note>
+
+## Configure an OAuth provider
+
+<Tabs>
+  <Tab title="GitHub">
+    <Steps>
+      <Step title="Create an OAuth app">
+        Go to [github.com/settings/developers](https://github.com/settings/developers) and click **New OAuth App**.
+
+        Fill in the form:
+
+        - **Application name** — any name, for example `Kashio`
+        - **Homepage URL** — your app's public URL, for example `https://your-app.example.com`
+        - **Authorization callback URL** — `https://your-app.example.com/api/auth/callback/github`
+
+        Click **Register application**.
+      </Step>
+      <Step title="Copy your credentials">
+        On the app's settings page, copy the **Client ID**.
+
+        Click **Generate a new client secret** and copy the secret before navigating away — GitHub only shows it once.
+      </Step>
+      <Step title="Add the credentials to your environment">
+        Add these variables to your `.env.local` file:
+
+        ```bash
+        GITHUB_CLIENT_ID="your-github-client-id"
+        GITHUB_CLIENT_SECRET="your-github-client-secret"
+        ```
+
+        Restart the server. The **Continue with GitHub** button will appear on the login and signup pages.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Google">
+    <Steps>
+      <Step title="Create a project and configure OAuth">
+        Go to the [Google Cloud Console](https://console.cloud.google.com) and create a new project, or select an existing one.
+
+        In the left sidebar, navigate to **APIs & Services → Credentials**. Click **Create credentials** and choose **OAuth client ID**.
+
+        If prompted, configure the OAuth consent screen first — set the app name, support email, and any required scopes.
+      </Step>
+      <Step title="Set the redirect URI">
+        When creating the OAuth client ID:
+
+        - Set **Application type** to **Web application**
+        - Under **Authorized redirect URIs**, add: `https://your-app.example.com/api/auth/callback/google`
+
+        Click **Create**.
+      </Step>
+      <Step title="Copy your credentials">
+        Google displays your **Client ID** and **Client Secret** in a dialog. Copy both values.
+      </Step>
+      <Step title="Add the credentials to your environment">
+        Add these variables to your `.env.local` file:
+
+        ```bash
+        GOOGLE_CLIENT_ID="your-google-client-id"
+        GOOGLE_CLIENT_SECRET="your-google-client-secret"
+        ```
+
+        Restart the server. The **Continue with Google** button will appear on the login and signup pages.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Callback URL reference
+
+When registering your OAuth app, use the callback URL that matches your deployment:
+
+| Provider | Callback URL |
+| -------- | ------------ |
+| GitHub   | `{APP_URL}/api/auth/callback/github` |
+| Google   | `{APP_URL}/api/auth/callback/google` |
+
+Replace `{APP_URL}` with your actual deployment URL (for example, `https://your-app.example.com`). For local development, use `http://localhost:3000`.

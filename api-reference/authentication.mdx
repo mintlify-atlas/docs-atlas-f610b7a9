@@ -1,0 +1,64 @@
+---
+title: "Authenticating with the Kashio API"
+description: "Kashio API endpoints require a session cookie set by Better Auth. Learn how to sign in and pass your session on authenticated requests."
+---
+
+Kashio uses cookie-based authentication managed by [Better Auth](https://www.better-auth.com). There are no API keys — you authenticate by obtaining a session cookie after signing in, then including that cookie on every subsequent request. This applies whether you're calling the API from a browser, a server, or a command-line tool like `curl`.
+
+<Note>
+  All `/api/expenses`, `/api/parse-expense`, `/api/chat`, `/api/transcribe`, and `/api/user/*` endpoints require authentication. Requests without a valid session cookie receive a `401 Unauthorized` response.
+</Note>
+
+## How to obtain a session
+
+You can get a session in two ways:
+
+- **Sign in through the web app** — Visit your Kashio instance, sign in with email/password or OAuth (GitHub or Google), and the browser will store the session cookie automatically.
+- **Sign in via the API** — Send a `POST` request to `/api/auth/sign-in/email` with your credentials. Better Auth sets the session cookie in the response.
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/auth/sign-in/email \
+  --header "Content-Type: application/json" \
+  --data '{
+    "email": "you@example.com",
+    "password": "your-password"
+  }' \
+  --cookie-jar ./cookies.txt
+```
+
+The `--cookie-jar` flag saves the session cookie to a file so you can reuse it in subsequent requests.
+
+## Making authenticated requests
+
+Pass the saved session cookie on every request to a protected endpoint:
+
+```bash
+curl --request GET \
+  --url http://localhost:3000/api/expenses \
+  --cookie ./cookies.txt
+```
+
+When making requests from a browser, cookies are sent automatically by the browser on same-origin requests. For cross-origin requests (for example, from a separate frontend), ensure credentials are included:
+
+```javascript
+const response = await fetch("http://localhost:3000/api/expenses", {
+  credentials: "include",
+});
+```
+
+## Error response
+
+If a request reaches a protected endpoint without a valid session, the API responds with:
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+**Status code:** `401 Unauthorized`
+
+## Session lifecycle
+
+Sessions are created by Better Auth and refreshed automatically. If a session expires or is invalidated (for example, after signing out), subsequent requests will receive `401` until you sign in again.

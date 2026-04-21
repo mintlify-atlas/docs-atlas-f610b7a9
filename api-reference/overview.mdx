@@ -1,0 +1,104 @@
+---
+title: "Kashio API reference"
+description: "Overview of Kashio's REST API — base URL, response format, HTTP status codes, rate limits, and links to all endpoint references."
+---
+
+Kashio exposes a REST API built on Next.js App Router. All endpoints live under the `/api` path of your deployment, accept and return JSON, and require a valid session cookie set by Better Auth. There are no API keys — authentication is session-based (see [Authentication](/api-reference/authentication)).
+
+## Base URL
+
+For a local development instance, the base URL is:
+
+```
+http://localhost:3000
+```
+
+In production, replace it with your deployment URL (for example, `https://kashio.example.com`).
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/expenses` | List the authenticated user's expenses |
+| `POST` | `/api/expenses` | Create a new expense |
+| `PUT` | `/api/expenses/[id]` | Update an existing expense |
+| `DELETE` | `/api/expenses/[id]` | Delete an expense |
+| `POST` | `/api/parse-expense` | Parse a natural language string into a structured expense |
+| `POST` | `/api/chat` | Stream AI-generated answers grounded in expense history |
+| `POST` | `/api/transcribe` | Transcribe an audio recording to text |
+| `GET` | `/api/user/preferences` | Fetch user preferences |
+| `POST` | `/api/user/preferences` | Create or update user preferences |
+| `GET` | `/api/integrations/telegram` | Get Telegram connection status |
+| `POST` | `/api/integrations/telegram/link` | Generate a Telegram deep-link token |
+| `DELETE` | `/api/integrations/telegram` | Disconnect the Telegram account |
+| `POST` | `/api/integrations/telegram/webhook` | Receive Telegram update events (called by Telegram) |
+
+## Authentication model
+
+All endpoints (except `/api/auth/*` and `/api/integrations/telegram/webhook`) require an active session. Sessions are managed by [Better Auth](https://www.better-auth.com) and stored in a `better-auth.session_token` cookie. Sign in via the web app or by calling `POST /api/auth/sign-in/email` directly.
+
+Requests without a valid session receive a `401 Unauthorized` response.
+
+See [Authentication](/api-reference/authentication) for details on how to obtain and pass a session.
+
+## Standard error response
+
+When a request fails, the API returns a JSON object with at minimum an `error` field. Validation failures also include a `details` array listing the specific problems.
+
+```json
+{
+  "error": "Validation failed",
+  "details": [
+    "amount: Amount must be greater than 0",
+    "category: Invalid category"
+  ]
+}
+```
+
+## HTTP status codes
+
+| Code | Meaning |
+|------|---------|
+| `200 OK` | Request succeeded |
+| `201 Created` | Resource created successfully |
+| `204 No Content` | Resource deleted successfully |
+| `400 Bad Request` | Invalid request body or parameters |
+| `401 Unauthorized` | Missing or invalid session |
+| `404 Not Found` | Resource not found or not owned by the authenticated user |
+| `500 Internal Server Error` | Unexpected server error |
+
+## Rate limits
+
+Better Auth applies the following rate limits:
+
+| Scope | Limit |
+|-------|-------|
+| Default (all routes) | 20 requests per 60 seconds |
+| `POST /api/auth/sign-in/*` | 5 requests per 60 seconds |
+| `POST /api/auth/sign-up/*` | 3 requests per 5 minutes |
+| `GET /api/auth/get-session` | 100 requests per 60 seconds |
+
+Requests that exceed a rate limit receive a `429 Too Many Requests` response.
+
+## Endpoint reference pages
+
+<CardGroup cols={2}>
+  <Card title="Expenses" icon="receipt" href="/api-reference/expenses">
+    GET, POST, PUT, and DELETE for managing expenses
+  </Card>
+  <Card title="Parse expense" icon="wand-magic-sparkles" href="/api-reference/parse-expense">
+    Parse a natural language string into structured expense fields
+  </Card>
+  <Card title="Chat" icon="robot" href="/api-reference/chat">
+    Stream AI-generated answers about spending history
+  </Card>
+  <Card title="Transcribe" icon="microphone" href="/api-reference/transcribe">
+    Convert audio recordings to text
+  </Card>
+  <Card title="User preferences" icon="sliders" href="/api-reference/user-preferences">
+    Read and update budget, currency, timezone, and category settings
+  </Card>
+  <Card title="Telegram integration" icon="paper-plane" href="/api-reference/telegram-integration">
+    Link, check, and disconnect Telegram account
+  </Card>
+</CardGroup>

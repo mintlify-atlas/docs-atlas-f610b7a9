@@ -1,0 +1,234 @@
+---
+title: "Expenses API endpoints"
+description: "GET, POST, PUT, and DELETE endpoints for managing expenses. Includes request bodies, response shapes, and authentication requirements."
+---
+
+The expenses endpoints let you list, create, update, and delete expense records for the authenticated user. All four endpoints require a valid session cookie. Expenses are always scoped to the signed-in user — you cannot read or modify another user's data.
+
+## The expense object
+
+All endpoints that return expense data use the following shape:
+
+<ResponseField name="id" type="string" required>
+  UUID that uniquely identifies the expense.
+</ResponseField>
+
+<ResponseField name="userId" type="string" required>
+  ID of the user who owns this expense.
+</ResponseField>
+
+<ResponseField name="amount" type="string" required>
+  Expense amount as a numeric string (e.g., `"12.50"`). Stored as `numeric(10,2)` in the database.
+</ResponseField>
+
+<ResponseField name="description" type="string" required>
+  Human-readable description of the expense, normalized to title case.
+</ResponseField>
+
+<ResponseField name="category" type="string" required>
+  One of the 10 valid category values: `food`, `transport`, `entertainment`, `shopping`, `bills`, `health`, `groceries`, `travel`, `education`, `other`.
+</ResponseField>
+
+<ResponseField name="date" type="string" required>
+  Date of the expense in `YYYY-MM-DD` format.
+</ResponseField>
+
+<ResponseField name="rawInput" type="string" required>
+  The original natural language string the user entered (e.g., `"lunch $12"`). Stored for reference.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp of when the record was created.
+</ResponseField>
+
+---
+
+## GET /api/expenses
+
+Returns all expenses belonging to the authenticated user, ordered by date descending.
+
+**Authentication:** Required
+
+```bash
+curl --request GET \
+  --url http://localhost:3000/api/expenses \
+  --cookie ./cookies.txt
+```
+
+**Response — 200 OK**
+
+```json
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "userId": "user_abc123",
+    "amount": "12.50",
+    "description": "Lunch at Chipotle",
+    "category": "food",
+    "date": "2026-04-21",
+    "rawInput": "lunch at chipotle $12.50",
+    "createdAt": "2026-04-21T18:30:00.000Z"
+  }
+]
+```
+
+---
+
+## POST /api/expenses
+
+Creates a new expense for the authenticated user. Returns the created expense object with a `201 Created` status.
+
+**Authentication:** Required
+
+### Request body
+
+<ParamField body="amount" type="number" required>
+  Expense amount. Must be a positive number greater than 0.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Description of the expense. Must be at least 1 character. The API normalizes it to title case.
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Expense category. Must be one of: `food`, `transport`, `entertainment`, `shopping`, `bills`, `health`, `groceries`, `travel`, `education`, `other`.
+</ParamField>
+
+<ParamField body="date" type="string" required>
+  Date of the expense. Must be a valid date string in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField body="rawInput" type="string" required>
+  The original input string from the user. Stored as-is for reference.
+</ParamField>
+
+```bash
+curl --request POST \
+  --url http://localhost:3000/api/expenses \
+  --header "Content-Type: application/json" \
+  --cookie ./cookies.txt \
+  --data '{
+    "amount": 12.50,
+    "description": "lunch at chipotle",
+    "category": "food",
+    "date": "2026-04-21",
+    "rawInput": "lunch at chipotle $12.50"
+  }'
+```
+
+**Response — 201 Created**
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "userId": "user_abc123",
+  "amount": "12.50",
+  "description": "Lunch at Chipotle",
+  "category": "food",
+  "date": "2026-04-21",
+  "rawInput": "lunch at chipotle $12.50",
+  "createdAt": "2026-04-21T18:30:00.000Z"
+}
+```
+
+---
+
+## PUT /api/expenses/[id]
+
+Updates an existing expense. Returns the updated expense object. The `id` path parameter must be a valid UUID. The expense must be owned by the authenticated user.
+
+**Authentication:** Required
+
+### Path parameter
+
+<ParamField path="id" type="string" required>
+  UUID of the expense to update.
+</ParamField>
+
+### Request body
+
+<ParamField body="amount" type="number" required>
+  Updated expense amount. Must be a positive number greater than 0.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Updated description. Normalized to title case by the API.
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Updated category. Must be one of the 10 valid category values.
+</ParamField>
+
+<ParamField body="date" type="string" required>
+  Updated date in `YYYY-MM-DD` format.
+</ParamField>
+
+<Note>
+  The `rawInput` field is not accepted on PUT requests — it is only stored at creation time.
+</Note>
+
+```bash
+curl --request PUT \
+  --url http://localhost:3000/api/expenses/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  --header "Content-Type: application/json" \
+  --cookie ./cookies.txt \
+  --data '{
+    "amount": 15.00,
+    "description": "dinner at chipotle",
+    "category": "food",
+    "date": "2026-04-21"
+  }'
+```
+
+**Response — 200 OK**
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "userId": "user_abc123",
+  "amount": "15.00",
+  "description": "Dinner at Chipotle",
+  "category": "food",
+  "date": "2026-04-21",
+  "rawInput": "lunch at chipotle $12.50",
+  "createdAt": "2026-04-21T18:30:00.000Z"
+}
+```
+
+**Error — 404 Not Found** (expense does not exist or belongs to another user)
+
+```json
+{
+  "error": "Expense not found"
+}
+```
+
+---
+
+## DELETE /api/expenses/[id]
+
+Deletes an expense. Returns `204 No Content` on success. The expense must be owned by the authenticated user.
+
+**Authentication:** Required
+
+### Path parameter
+
+<ParamField path="id" type="string" required>
+  UUID of the expense to delete.
+</ParamField>
+
+```bash
+curl --request DELETE \
+  --url http://localhost:3000/api/expenses/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  --cookie ./cookies.txt
+```
+
+**Response — 204 No Content** (empty body)
+
+**Error — 404 Not Found**
+
+```json
+{
+  "error": "Expense not found"
+}
+```

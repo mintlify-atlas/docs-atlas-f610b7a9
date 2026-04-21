@@ -1,0 +1,41 @@
+---
+title: "Analytics dashboard and spending insights"
+description: "Explore your spending patterns with charts, category breakdowns, budget comparisons, and day-of-week analysis across any date range."
+---
+
+The analytics page at `/analytics` gives you a visual overview of your spending across any time window you choose. Every chart on the page reacts to the same date range selector, so changing the period updates all views at once. The dashboard is designed to let you quickly spot where your money goes, how your pace compares to your budget, and which days or categories drive your spending.
+
+## Date range filtering
+
+Three range modes are available at the top of the page:
+
+- **Month** — select any month and year. Defaults to the current month.
+- **Year** — select a calendar year. Charts aggregate data by month.
+- **Custom** — pick a start and end date with the calendar pickers.
+
+## Charts and sections
+
+<CardGroup cols={2}>
+  <Card title="Spending trend" icon="chart-line">
+    An area chart showing spending over time. In month view it plots daily totals; in year view it plots monthly totals; in custom range it plots daily totals across the selected span.
+  </Card>
+  <Card title="Spending stats" icon="calculator">
+    Four summary metrics for the selected period: total spent, number of transactions, average per transaction, and average per day.
+  </Card>
+  <Card title="Spending vs budget" icon="scale-balanced">
+    A cumulative line chart comparing your running total against a proportional daily budget line. Only visible in month view. Your actual spending is plotted in orange; the budget pace is shown as a dashed grey line.
+  </Card>
+  <Card title="By category" icon="chart-pie">
+    A donut chart with a legend showing the top categories by total amount spent. Up to six categories are listed in the legend; additional categories are noted with a count.
+  </Card>
+  <Card title="By day of week" icon="calendar-days">
+    A bar chart showing total spending grouped by day of the week, from Sunday through Saturday. Weekend bars are highlighted in a distinct colour so patterns are easy to spot.
+  </Card>
+  <Card title="Top categories" icon="list-ol">
+    A horizontal bar chart ranking all categories present in the selected period by total spend, showing up to eight categories.
+  </Card>
+</CardGroup>
+
+## Navigating to analytics
+
+Click **Analytics** in the bottom navigation bar from any protected page, or navigate directly to `/analytics`. Use the back arrow in the header to return to the home dashboard.

@@ -1,0 +1,105 @@
+---
+title: "Logging expenses with natural language"
+description: "Kashio uses AI to parse plain-English expense entries — extracting amount, category, date, and description with configurable confidence thresholds."
+---
+
+Kashio parses expense entries using a two-tier validation system. The first tier happens inside the AI model: it evaluates the input, extracts structured fields, and returns a confidence level alongside a list of any fields it could not determine. The second tier is handled by the frontend: high-confidence results with no missing fields are saved automatically, while anything lower — medium confidence, low confidence, or a missing optional field — triggers a confirmation dialog so you can review and correct the parse before it is saved. Amount is the only critical field; if the AI cannot extract it at all, the input is rejected with a specific error message.
+
+## Logging flow
+
+<Tabs>
+  <Tab title="Text input">
+    <Steps>
+      <Step title="Type your expense">
+        Click the **Add expense** input at the top of the home dashboard and type a plain-English description of what you spent. You do not need to follow any special format.
+
+        Examples:
+        - `coffee $6`
+        - `uber to airport $42 yesterday`
+        - `lunch at chipotle $15`
+        - `$29 pricerite marketplace groceries`
+        - `netflix $15`
+      </Step>
+      <Step title="Submit">
+        Press **Enter** or click **Add**. Kashio sends the raw text to the AI parser.
+      </Step>
+      <Step title="AI parses the input">
+        The parser extracts amount, description, category, and date, then assigns a confidence level and lists any fields it could not determine.
+
+        - **High confidence, no missing fields** — the expense is saved automatically. A brief preview card appears below the input confirming the parsed values.
+        - **Medium confidence, low confidence, or any missing optional field** — a confirmation dialog opens so you can review and edit the parsed values before saving.
+      </Step>
+      <Step title="Save">
+        If a confirmation dialog appeared, review the pre-filled fields, correct anything that looks wrong, then click **Save Expense**.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Voice input">
+    <Steps>
+      <Step title="Start recording">
+        Click the microphone button next to the text input. The button turns red and animates to indicate recording is active. Your browser may ask for microphone permission the first time.
+      </Step>
+      <Step title="Speak your expense">
+        Say the expense in plain English, for example: "Uber to the airport, forty-two dollars, yesterday."
+      </Step>
+      <Step title="Stop recording">
+        Click the microphone button again. Kashio sends the audio to Groq Whisper for transcription, then feeds the resulting text through the same AI parser as typed input.
+      </Step>
+      <Step title="Review and save">
+        The transcribed text populates the parse flow. High-confidence results save automatically; lower-confidence results open the confirmation dialog.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+<Info>
+The parser resolves relative date phrases against the current date. Inputs like `yesterday`, `last Friday`, and `last week` are converted to the correct calendar date before the expense is saved. Time-of-day phrases such as "morning" or "dinner" are ignored because Kashio tracks date only, not time.
+</Info>
+
+## Expense categories
+
+Every expense is assigned one of ten categories. The AI infers the category from the description; you can change it in the confirmation dialog or when editing an existing expense.
+
+| Category | Label |
+|---|---|
+| `food` | Food |
+| `transport` | Transport |
+| `entertainment` | Entertainment |
+| `shopping` | Shopping |
+| `bills` | Bills |
+| `health` | Health |
+| `groceries` | Groceries |
+| `travel` | Travel |
+| `education` | Education |
+| `other` | Other |
+
+## Confirmation dialog
+
+The confirmation dialog opens when the AI returns medium or low confidence, or when any field other than amount is missing. It shows the AI's reasoning at the top so you know why it was uncertain.
+
+Fields you can edit in the dialog:
+
+- **Amount** — numeric value; required to save. Missing amount fields are highlighted in red with an asterisk. The dialog auto-focuses this field if amount is missing.
+- **Description** — what you bought. Also highlighted in red and auto-focused (if amount is present) when missing.
+- **Category** — dropdown with all ten categories.
+- **Date** — calendar date picker.
+
+**Save Expense** stays disabled until amount is greater than zero and description is non-empty.
+
+<Warning>
+If the AI cannot find an amount in your input at all, the confirmation dialog does not open. Instead, Kashio shows an inline error: "I couldn't find an amount. Please include how much you spent (e.g., '$15' or '15 dollars')." Retype the entry with an explicit amount to proceed.
+</Warning>
+
+## Managing expenses from the table
+
+The expense table on the home dashboard shows all expenses for the selected month, filtered by category or search query if active.
+
+**Edit an expense** — click the pencil icon on any row. An edit dialog opens with the same fields as the confirmation dialog. Click **Save** when done.
+
+**Delete an expense** — click the trash icon. The button switches to a confirmation state. Click it again within the timeout window to confirm the deletion. If you do not confirm, the delete is cancelled automatically.
+
+**Filter by month** — use the left and right arrow buttons in the table header to navigate between months. The table goes back as far as your earliest recorded expense.
+
+**Filter by category** — when a month has expenses in more than two categories, category pills appear above the table. Click a pill to show only that category; click again or click **All** to clear the filter.
+
+**Search** — type in the search box in the table header to filter by description or category name.

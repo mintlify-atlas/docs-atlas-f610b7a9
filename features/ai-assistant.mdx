@@ -1,0 +1,49 @@
+---
+title: "AI spending assistant and chat"
+description: "Ask Kashio questions about your spending history in plain English. The AI streams answers grounded in your actual expense records."
+---
+
+The chat interface at `/chat` connects you to an AI assistant that has full access to your expense history. When you ask a question, the assistant retrieves your actual records, reasons over them, and streams a response back in real time. It can aggregate totals, compare periods, identify patterns, and answer follow-up questions in the same conversation. The assistant does not have access to anyone else's data — every answer is grounded in your own expenses.
+
+## Asking a question
+
+Type your question in the input at the bottom of the chat screen and press **Enter** or click the send button. The assistant starts streaming its response immediately. A blinking cursor shows that the response is still being generated. Once streaming is complete, a copy button appears on the assistant's message so you can copy the text to your clipboard.
+
+If you want to start from one of the built-in suggestions, they are shown on the empty-state screen before your first message. Click any suggestion to pre-fill the input, then send it as normal.
+
+## Voice input in chat
+
+<Tip>
+Voice input works the same way in chat as it does in the expense logger. Click the microphone button, speak your question, then click the button again to stop. Kashio transcribes the audio with Groq Whisper and sends the resulting text as your message. This is especially useful on mobile or when your hands are occupied.
+</Tip>
+
+## Example questions
+
+<CardGroup cols={2}>
+  <Card title="Spending summaries" icon="dollar-sign">
+    - "How much did I spend this month?"
+    - "What's my total spending for the year?"
+    - "How much have I spent in the last 30 days?"
+  </Card>
+  <Card title="Category analysis" icon="tag">
+    - "What's my biggest expense category?"
+    - "Show me my food and groceries spending"
+    - "How much did I spend on transport last month?"
+  </Card>
+  <Card title="Time-based queries" icon="calendar">
+    - "How does this month compare to last month?"
+    - "What did I spend in January?"
+    - "Which month was my most expensive this year?"
+  </Card>
+  <Card title="Budget check-ins" icon="chart-line">
+    - "Am I on track with my budget?"
+    - "How much do I have left to spend this month?"
+    - "What's my average daily spend this month?"
+  </Card>
+</CardGroup>
+
+## What context the assistant has
+
+The assistant has access to your complete expense history: every recorded transaction including amount, description, category, and date. It does not have access to your budget settings or preferences directly, but it can answer budget-related questions when you share those figures in the conversation.
+
+Responses are rendered as formatted text, including lists and tables where the assistant chooses to structure the output.

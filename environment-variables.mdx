@@ -1,0 +1,134 @@
+---
+title: "Environment variables reference"
+description: "Complete reference for all Kashio environment variables — required database, auth, and AI keys plus optional OAuth and Telegram settings."
+---
+
+Kashio reads its configuration from a `.env.local` file in the project root. Variables fall into five groups: core required variables, email authentication, GitHub OAuth, Google OAuth, and Telegram integration. Only the four required variables are needed to run the app locally.
+
+```bash .env.local
+# Required
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/kashio"
+BETTER_AUTH_SECRET="replace-with-a-random-secret"
+BETTER_AUTH_URL="http://localhost:3000"
+GROQ_API_KEY="your-groq-api-key"
+
+# Email auth
+RESEND_API_KEY=""
+AUTH_FROM_EMAIL="Kashio <auth@example.com>"
+
+# OAuth — GitHub
+GITHUB_CLIENT_ID=""
+GITHUB_CLIENT_SECRET=""
+
+# OAuth — Google
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+
+# Telegram
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_BOT_USERNAME=""
+TELEGRAM_WEBHOOK_SECRET=""
+APP_BASE_URL="http://localhost:3000"
+```
+
+<Note>
+  The `telegram:webhook:set` script reads from the shell environment or a `.env` file, not from `.env.local`. If you store Telegram secrets only in `.env.local`, export them before running the script or duplicate them into `.env`.
+</Note>
+
+<AccordionGroup>
+  <Accordion title="Required">
+    These four variables must be set before the app will start.
+
+    <ParamField path="DATABASE_URL" type="string" required>
+      PostgreSQL connection string. Kashio uses this to connect to the database via the `pg` driver and Drizzle ORM.
+
+      Example: `postgresql://postgres:postgres@localhost:5432/kashio`
+    </ParamField>
+
+    <ParamField path="BETTER_AUTH_SECRET" type="string" required>
+      Random secret used by Better Auth to sign and encrypt session tokens. Generate a strong random value — for example, with `openssl rand -base64 32`.
+    </ParamField>
+
+    <ParamField path="BETTER_AUTH_URL" type="string" required>
+      The base URL of your Kashio instance. Better Auth uses this to construct redirect URLs for OAuth flows and email verification links.
+
+      Example: `http://localhost:3000` locally, or your public deployment URL in production.
+    </ParamField>
+
+    <ParamField path="GROQ_API_KEY" type="string" required>
+      API key for Groq. Kashio uses Groq for AI expense parsing (structured output via GPT OSS 120B) and voice transcription (Whisper Large v3 Turbo).
+
+      Obtain a key from the [Groq console](https://console.groq.com).
+    </ParamField>
+  </Accordion>
+
+  <Accordion title="Email auth">
+    These variables control how Kashio sends verification and password reset emails. If both are left empty in local development, Kashio falls back to logging email links to the server console — no email provider needed.
+
+    <ParamField path="RESEND_API_KEY" type="string">
+      API key for [Resend](https://resend.com), the email delivery provider. Required in production if you want verification and password reset emails to actually send.
+    </ParamField>
+
+    <ParamField path="AUTH_FROM_EMAIL" type="string">
+      The sender address shown on outgoing auth emails. Should be a verified address or domain in your Resend account.
+
+      Example: `Kashio <auth@yourdomain.com>`
+    </ParamField>
+
+    <Note>
+      In local development, you can leave both `RESEND_API_KEY` and `AUTH_FROM_EMAIL` empty. Kashio will log the verification and password reset links directly to the server console instead of sending an email.
+    </Note>
+  </Accordion>
+
+  <Accordion title="OAuth — GitHub">
+    Set these variables to enable **Sign in with GitHub**. If left empty, the GitHub OAuth option will not appear on the login page.
+
+    To get these values, create an OAuth app in your [GitHub developer settings](https://github.com/settings/developers). Set the authorization callback URL to `{BETTER_AUTH_URL}/api/auth/callback/github`.
+
+    <ParamField path="GITHUB_CLIENT_ID" type="string">
+      Client ID from your GitHub OAuth app.
+    </ParamField>
+
+    <ParamField path="GITHUB_CLIENT_SECRET" type="string">
+      Client secret from your GitHub OAuth app.
+    </ParamField>
+  </Accordion>
+
+  <Accordion title="OAuth — Google">
+    Set these variables to enable **Sign in with Google**. If left empty, the Google OAuth option will not appear on the login page.
+
+    To get these values, create OAuth credentials in the [Google Cloud Console](https://console.cloud.google.com). Set the authorized redirect URI to `{BETTER_AUTH_URL}/api/auth/callback/google`.
+
+    <ParamField path="GOOGLE_CLIENT_ID" type="string">
+      Client ID from your Google OAuth credentials.
+    </ParamField>
+
+    <ParamField path="GOOGLE_CLIENT_SECRET" type="string">
+      Client secret from your Google OAuth credentials.
+    </ParamField>
+  </Accordion>
+
+  <Accordion title="Telegram">
+    Set these variables to enable the Telegram bot integration. Users can then link their Telegram account from **Profile → Integrations** and log expenses or ask spending questions directly from a Telegram chat.
+
+    <ParamField path="TELEGRAM_BOT_TOKEN" type="string">
+      Token for your Telegram bot, obtained from [@BotFather](https://t.me/BotFather).
+    </ParamField>
+
+    <ParamField path="TELEGRAM_BOT_USERNAME" type="string">
+      The username of your Telegram bot, without the `@` prefix.
+
+      Example: `kashio_bot`
+    </ParamField>
+
+    <ParamField path="TELEGRAM_WEBHOOK_SECRET" type="string">
+      An arbitrary secret string used to verify that incoming webhook requests come from Telegram. Set this to any random value, and pass the same value when registering the webhook.
+    </ParamField>
+
+    <ParamField path="APP_BASE_URL" type="string">
+      The public base URL of your deployed Kashio instance. Telegram uses this to reach the webhook endpoint at `{APP_BASE_URL}/api/integrations/telegram/webhook`.
+
+      Example: `https://kashio.example.com`
+    </ParamField>
+  </Accordion>
+</AccordionGroup>

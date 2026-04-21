@@ -1,0 +1,61 @@
+---
+title: "Kashio: AI-native expense tracking for everyone"
+description: "Kashio turns natural language, voice, and Telegram messages into structured expenses. Track spending, monitor budgets, and ask questions about your finances."
+---
+
+Kashio is a full-stack expense tracker built around a simple idea: logging what you spend should be as easy as saying it out loud. Type `coffee $6`, speak your expense, or message your Telegram bot — Kashio's AI parses the input, extracts the amount, category, and date, and saves it automatically. When you want answers, ask the AI assistant questions like "how much did I spend on food last month?" and get streaming, context-aware responses.
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Set up Kashio locally and log your first expense in under 10 minutes
+  </Card>
+  <Card title="Expense logging" icon="pen-to-square" href="/features/expense-logging">
+    Learn how natural language parsing and voice input work
+  </Card>
+  <Card title="AI assistant" icon="robot" href="/features/ai-assistant">
+    Ask questions about your spending history with streaming AI answers
+  </Card>
+  <Card title="API reference" icon="code" href="/api-reference/overview">
+    Explore every endpoint with parameters, responses, and examples
+  </Card>
+</CardGroup>
+
+## What Kashio does
+
+Kashio handles the full expense-tracking lifecycle — from capture to insight — without requiring you to fill in forms or remember categories.
+
+<CardGroup cols={2}>
+  <Card title="Natural language capture" icon="message-lines">
+    Enter expenses in plain English. The AI extracts amount, category, description, and date — even relative ones like "yesterday" or "last Tuesday".
+  </Card>
+  <Card title="Voice input" icon="microphone">
+    Speak your expense or chat question. Kashio transcribes audio via Groq Whisper and feeds it into the same parsing pipeline.
+  </Card>
+  <Card title="Analytics dashboard" icon="chart-line">
+    View spending over time, category breakdowns, budget vs. actual comparisons, and day-of-week patterns across any date range.
+  </Card>
+  <Card title="Telegram bot" icon="paper-plane">
+    Log expenses and ask spending questions directly from Telegram. Low-confidence parses surface inline confirm/edit actions.
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="Create an account">
+    Sign up with email/password, GitHub, or Google OAuth. Complete the onboarding wizard to set your monthly budget, currency, and expense categories.
+  </Step>
+  <Step title="Log your first expense">
+    On the home dashboard, type something like `lunch $12` or `uber to airport $42 yesterday` in the expense input. Kashio's AI parses it and saves it — or shows a confirmation dialog if it needs your review.
+  </Step>
+  <Step title="Explore your spending">
+    Visit the Analytics page to see charts and breakdowns. Use the AI Chat to ask questions like "What was my biggest expense category in March?"
+  </Step>
+  <Step title="Connect Telegram (optional)">
+    Link your Telegram account from **Profile → Integrations** and log expenses or ask questions from anywhere via your phone.
+  </Step>
+</Steps>
+
+## Tech stack
+
+Kashio is built with Next.js 16, React 19, PostgreSQL, Drizzle ORM, Better Auth, and Groq-powered AI (Whisper for transcription, GPT OSS 120B for parsing and chat). See the [self-hosting guide](/deployment/self-hosting) to run it yourself.
